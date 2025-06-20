@@ -1,0 +1,30 @@
+version: 0.2
+
+env:
+  variables:
+    REPOSITORY_URI: 864981745854.dkr.ecr.ap-south-1.amazonaws.com/crawler
+
+phases:
+  pre_build:
+    commands:
+      - echo Logging in to Amazon ECR...
+      - aws --version
+      - aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin $REPOSITORY_URI
+  build:
+    commands:
+      - echo Build started on `date`
+      - echo Building the Docker image...
+      - docker build -t $REPOSITORY_URI:latest .
+  post_build:
+    commands:
+      - echo Build completed on `date`
+      - echo Pushing the Docker image with tag latest...
+      - docker push $REPOSITORY_URI:latest
+      - echo Writing image definitions file...
+      - IMAGE_URI="$REPOSITORY_URI:latest"
+      - echo "[{\"name\":\"Crawler\",\"imageUri\":\"$IMAGE_URI\"}]" > imagedefinitions.json
+      - cat imagedefinitions.json
+
+artifacts:
+  files:
+    - imagedefinitions.json
